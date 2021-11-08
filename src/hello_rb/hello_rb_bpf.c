@@ -11,7 +11,7 @@ struct
 
 long ringbuffer_flags = 0;
 
-SEC("kprobe/hello_rb_main")
+
 int hello_rb_main(struct pt_regs *ctx)
 {
     __u64 id = bpf_get_current_pid_tgid();
