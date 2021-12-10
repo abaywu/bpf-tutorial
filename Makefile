@@ -1,3 +1,5 @@
+.PHONY: clean
+
 libbpf:
 	# git submodule add https://github.com/libbpf/libbpf/ libbpf
 	cd src/libbpf/src; make clean; BUILD_STATIC_ONLY=y make install
@@ -13,7 +15,12 @@ hello_rb:
 	cd src/hello_rb;go mod tidy;CC=gcc CGO_CFLAGS="-I /usr/include/bpf" CGO_LDFLAGS="/usr/lib/x86_64-linux-gnu/libbpf.a" go build -o ../../build/hello_rb
 	cp src/hello_rb/hello_rb.o build/
 
-all: xdp_drop, hello_rb
+trace_tcp:
+	bpftool btf dump file /sys/kernel/btf/vmlinux format c > src/trace_tcp/vmlinux.h
+	clang -g -O2 -c -target bpf -Wall -Dbpf_target_x86 -I/user/include/bpf -o src/trace_tcp/trace_tcp_bpf.o src/trace_tcp/trace_tcp_bpf.c
+	cd src/trace_tcp; go mod tidy;CC=clang CGO_CFLAGS="-I/usr/include/bpf" CGO_LDFLAGS="/usr/lib/x86_64-linux-gnu/libbpf.a" go build -o trace_tcp trace_tcp.go
+
+all: xdp_drop, hello_rb, trace_tcp
 
 clean:
-	rm build/*; rm src/hello_rb/vmlinux.h; rm src/hello_rb/hello_rb.o
+	rm build/*; rm src/hello_rb/vmlinux.h; rm src/hello_rb/hello_rb.o; rm src/trace_tcp/trace_tcp.o; rm src/trace_tcp/trace_tcp
